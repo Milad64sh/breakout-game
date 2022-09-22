@@ -87,14 +87,115 @@ function drawBricks() {
   });
 }
 
+// move paddle canvas
+function movePaddle() {
+  paddle.x += paddle.dx;
+
+  // wall detection
+  if (paddle.x + paddle.w > canvas.width) {
+    paddle.x = canvas.width - paddle.w;
+  }
+  if (paddle.x < 0) {
+    paddle.x = 0;
+  }
+}
+// Move Ball on canvas
+function moveBall() {
+  ball.x += ball.dx;
+  ball.y += ball.dy;
+
+  // wall collision(right/left)
+  if (ball.x + ball.size > canvas.width || ball.x - ball.size < 0) {
+    ball.dx *= -1;
+  }
+  // wall collision top/bottom
+  if (ball.y + ball.size > canvas.height || ball.y - ball.size < 0) {
+    ball.dy *= -1;
+  }
+  // paddle collision
+  if (
+    ball.x - ball.size > paddle.x &&
+    ball.x + ball.size < paddle.x + paddle.w &&
+    ball.y + ball.size > paddle.y
+  ) {
+    ball.dy = -ball.speed;
+  }
+  // Brick collision
+  bricks.forEach((column) => {
+    column.forEach((brick) => {
+      if (brick.visible) {
+        if (
+          ball.x - ball.size > brick.x &&
+          ball.x + ball.size < brick.x + brick.w &&
+          ball.y + ball.size > brick.y &&
+          ball.y - ball.size < brick.y + brick.h
+        ) {
+          ball.dy *= -1;
+          brick.visible = false;
+          increaseScore();
+        }
+      }
+    });
+  });
+  // Hit bottom wall lose
+  if (ball.y + ball.size > canvas.height) {
+    showAllBricks();
+    score = 0;
+  }
+}
+
+// Increasse Score
+function increaseScore() {
+  score++;
+  if (score % (brickRowCount * brickRowCount) === 0) {
+    showAllBricks();
+  }
+}
+// Make all bricks appear
+function showAllBricks() {
+  bricks.forEach((column) => {
+    column.forEach((brick) => {
+      brick.visible = true;
+    });
+  });
+}
 // Draw everything
 function draw() {
+  // clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBall();
   drawPaddle();
   drawScore();
   drawBricks();
 }
-draw();
+
+// update canvas drawing and animation
+function update() {
+  movePaddle();
+  moveBall();
+  // Draw everything
+  draw();
+  requestAnimationFrame(update);
+}
+update();
+// keydown event
+function keyDown(e) {
+  if (e.key === 'ArrowRight') {
+    paddle.dx = paddle.speed;
+  } else if (e.key === 'ArrowLeft') {
+    paddle.dx = -paddle.speed;
+  }
+}
+// keyup event
+function keyUp(e) {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    paddle.dx = 0;
+  }
+}
+
+// keyboard event handlers
+document.addEventListener('keydown', keyDown);
+document.addEventListener('keyup', keyUp);
 
 // Rules and close event handlers
 rulesBtn.addEventListener('click', () => rules.classList.add('show'));
